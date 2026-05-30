@@ -1,11 +1,10 @@
-import { useTranslations } from "next-intl"
+import { redirect } from "@/i18n/navigation"
 
-export default function Home() {
-  const t = useTranslations("app")
-  return (
-    <main className="p-6 space-y-4">
-      <h1 className="text-2xl">{t("title")}</h1>
-      <p className="font-mono text-xl">RM 1,234.50</p>
-    </main>
-  )
+export default async function LocaleRoot({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}) {
+  const { locale } = await params
+  redirect({ href: "/today", locale })
 }

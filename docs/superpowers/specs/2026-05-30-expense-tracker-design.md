@@ -8,6 +8,8 @@
 
 A personal web app for a single user (dad) to track daily income and expenses, viewable as daily, monthly, and yearly summaries. Optimized for fast mobile entry, with category-based reports and monthly budgets. Data syncs across phone and laptop via cloud storage.
 
+**Primary design constraint — low friction for non-tech users.** The target user is not tech-savvy and wants fast, effective recording. Every screen, copy choice, and interaction is judged against this. Concrete targets and rules in Section 3.6.
+
 ## 2. Users & Scope
 
 - **Single user:** dad. No multi-user / family sharing in v1.
@@ -34,8 +36,8 @@ A personal web app for a single user (dad) to track daily income and expenses, v
 
 | Screen | Purpose |
 |---|---|
-| **Today** (home) | Quick-add button, today's totals (spent/earned/month-net tiles), today's transactions list. |
-| **Transactions** | Filterable list (date range, category, kind, note search), grouped by day with running balance. CSV/PDF export of current filter. |
+| **Today** (home) | Quick-add button, "Repeat last" button, today's totals (spent/earned/month-net tiles), today's entries list. |
+| **History** | Filterable list (date range, category, kind, note search), grouped by day with running balance. CSV/PDF export of current filter. |
 | **Reports** | Period toggle (day/month/year/custom). Income vs Expense bar, category donut, table with vs-budget delta. |
 | **Budgets** | Per-category monthly budget (expense categories only). Progress bars, "Copy last month" action. |
 | **Settings** | Categories, recurring rules, preferences (currency, default view), account, export-all. |
@@ -48,7 +50,40 @@ Navigation: bottom tab bar on mobile, left sidebar on desktop. Quick-add reachab
 - **Budget vs actual:** monthly budget per category, with overrun highlights.
 - **Export:** CSV and PDF of filtered transactions; "export all" zip in settings.
 
-### 3.5 Out of scope for v1 (wishlist)
+### 3.6 Low-friction requirements (non-negotiable)
+
+These are explicit, measurable rules the app must meet — derived from the primary design constraint in Section 1.
+
+**Speed targets**
+- **≤ 5 seconds** from opening the app to a saved transaction (cold-cache, signed in).
+- **≤ 3 taps** to log a transaction in the common case (amount → category → save).
+- **0 mandatory fields** beyond `amount` and `category`. Date defaults to today, kind defaults to expense, note is optional.
+
+**Smart defaults**
+- Quick-add opens with the **numeric keypad already up** and the amount field focused.
+- Category picker shows **top 4 most-used categories as big chips** at the top of the sheet. The single most-used category for the current hour-of-day is preselected (one tap away from save).
+- Kind defaults to **expense** (the most common case). One toggle flips it to income.
+- A **"Repeat last transaction"** button on the Today screen one-taps the most recent entry with today's date.
+
+**Touch & legibility (mobile)**
+- All tappable elements ≥ **48 × 48 px**.
+- Primary text ≥ **16 px**; amounts ≥ **20 px** in lists, 32 px on tiles.
+- Contrast meets **WCAG AA** in both light and dark mode.
+- The FAB is large (64 px) and thumb-reachable (bottom-right, 16 px margin).
+
+**Plain language**
+- No technical jargon ever surfaces in UI — no "sync", "OAuth", "RLS", "RLS policy", "transaction record". Use "saved", "signed in", "entry".
+- Screen titles: *Today*, *History*, *Reports*, *Budgets*, *Settings* (avoid "Transactions" as a primary label — "History" is more familiar).
+- Errors are written as instructions, not diagnostics. "Please enter an amount." not "Validation failed: amount is required."
+
+**Forgiveness**
+- Every destructive action (delete a transaction, archive a category) has a **5-second undo toast**. No confirmation modals for routine actions.
+- Edits are autosaved on field blur in the edit sheet — no "Save" button required when editing an existing transaction.
+
+**No nested menus**
+- All five primary screens are one tap away from the bottom tab bar (mobile) or sidebar (desktop). Settings is the only screen with sub-pages, and each sub-page is one tap deep.
+
+### 3.7 Out of scope for v1 (wishlist)
 
 - Receipt photo → OCR auto-fill
 - Multi-currency
@@ -191,7 +226,7 @@ Accent colors are used only on amounts and the FAB. Everything else stays neutra
 
 ### 6.4 Components (shadcn/ui restyled)
 
-- **Quick-add sheet:** bottom sheet on mobile, dialog on desktop. Amount input autofocused with numeric keypad on mobile. Category chips below. Date and note collapsed by default.
+- **Quick-add sheet:** bottom sheet on mobile, dialog on desktop. Amount input autofocused with numeric keypad on mobile, **most-used category preselected**, top-4 categories as big chips, kind defaults to expense. Date and note collapsed by default. Save button always visible — never below the fold.
 - **Transaction row:** date · category icon · note (left) — amount (right, mono, colored). Hairline separators only, no card chrome.
 - **Charts (Recharts):** no gridlines, no boxed legends, soft 8-color curated palette.
 - **FAB:** circular `+`, accent green, bottom-right fixed on mobile.
@@ -208,7 +243,7 @@ Auto, follows OS preference. Both modes are designed intentionally — not inver
 
 ### 6.7 Empty states
 
-One line of muted text + one button. Example: "No transactions yet. **+ Add your first one.**" No illustrations.
+One line of muted text + one button. Example: "Nothing yet today. **+ Add your first entry.**" No illustrations.
 
 ## 7. Error Handling & Edge Cases
 
@@ -248,4 +283,4 @@ One line of muted text + one button. Example: "No transactions yet. **+ Add your
 
 ## 10. Open Questions
 
-None blocking implementation. Items deferred to wishlist (Section 3.5) can be revisited after v1 ships.
+None blocking implementation. Items deferred to wishlist (Section 3.7) can be revisited after v1 ships.

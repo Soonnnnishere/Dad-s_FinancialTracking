@@ -1,25 +1,12 @@
 import { useTranslations } from "next-intl"
-import { createClient as createServer } from "@/lib/supabase/server"
-import { createClient as createBrowser } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/types"
 
 export type Category = Database["public"]["Tables"]["categories"]["Row"]
 export type NewCategory = Database["public"]["Tables"]["categories"]["Insert"]
 
-export async function listCategoriesServer(opts: { includeArchived?: boolean } = {}) {
-  const supabase = await createServer()
-  const q = supabase
-    .from("categories")
-    .select("*")
-    .order("created_at", { ascending: true })
-  if (!opts.includeArchived) q.eq("is_archived", false)
-  const { data, error } = await q
-  if (error) throw error
-  return data
-}
-
 export async function listCategoriesClient(opts: { includeArchived?: boolean } = {}) {
-  const supabase = createBrowser()
+  const supabase = createClient()
   const q = supabase
     .from("categories")
     .select("*")
@@ -31,7 +18,7 @@ export async function listCategoriesClient(opts: { includeArchived?: boolean } =
 }
 
 export async function createCategory(input: Omit<NewCategory, "user_id">) {
-  const supabase = createBrowser()
+  const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("not signed in")
   const { data, error } = await supabase
@@ -44,7 +31,7 @@ export async function createCategory(input: Omit<NewCategory, "user_id">) {
 }
 
 export async function updateCategory(id: string, patch: Partial<NewCategory>) {
-  const supabase = createBrowser()
+  const supabase = createClient()
   const { data, error } = await supabase
     .from("categories")
     .update(patch)

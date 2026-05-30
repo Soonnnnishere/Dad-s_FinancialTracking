@@ -1,8 +1,28 @@
 import { NextIntlClientProvider, hasLocale } from "next-intl"
 import { getMessages, setRequestLocale } from "next-intl/server"
 import { notFound } from "next/navigation"
+import { Inter, Noto_Sans_SC, JetBrains_Mono } from "next/font/google"
 import { routing } from "@/i18n/routing"
 import "../globals.css"
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+})
+
+const notoSC = Noto_Sans_SC({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-noto-sc",
+  display: "swap",
+})
+
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
+})
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }))
@@ -21,7 +41,11 @@ export default async function LocaleLayout({
   const messages = await getMessages()
 
   return (
-    <html lang={locale} suppressHydrationWarning className="h-full antialiased">
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      className={`${inter.variable} ${notoSC.variable} ${jetbrains.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider messages={messages}>
           {children}

@@ -1,0 +1,68 @@
+{
+  "app": { "title": "记账本" },
+  "nav": { "today": "今天", "history": "记录", "reports": "报表", "budgets": "预算", "settings": "设置" },
+  "signIn": {
+    "title": "登录记账本",
+    "subtitle": "使用 Google 账号继续",
+    "googleButton": "用 Google 登录"
+  },
+  "today": {
+    "title": "今天",
+    "tiles": { "spent": "今日支出", "earned": "今日收入", "netMonth": "本月净额" },
+    "empty": "今天还没有记录。",
+    "addFirst": "添加第一笔",
+    "repeatLast": "重复上一笔"
+  },
+  "quickAdd": {
+    "title": "记一笔",
+    "amount": "金额",
+    "category": "分类",
+    "date": "日期",
+    "note": "备注（可选）",
+    "kindExpense": "支出",
+    "kindIncome": "收入",
+    "save": "保存",
+    "errors": { "amount": "请输入金额", "category": "请选择分类" }
+  },
+  "categories": {
+    "title": "分类",
+    "add": "添加分类",
+    "archive": "归档",
+    "unarchive": "恢复",
+    "empty": "还没有分类。",
+    "form": {
+      "name": "名称",
+      "kind": "类型",
+      "icon": "图标",
+      "color": "颜色",
+      "save": "保存",
+      "cancel": "取消",
+      "errors": { "name": "请输入名称" }
+    }
+  },
+  "category": {
+    "food": "餐饮",
+    "transport": "交通",
+    "bills": "账单",
+    "entertainment": "娱乐",
+    "healthcare": "医疗",
+    "other": "其他",
+    "salary": "工资",
+    "bonus": "奖金",
+    "investment": "投资"
+  },
+  "settings": {
+    "title": "设置",
+    "categories": "分类",
+    "account": "账号",
+    "signedInAs": "已登录：{email}",
+    "signOut": "退出登录"
+  },
+  "toast": {
+    "saved": "已保存",
+    "deleted": "已删除",
+    "undo": "撤销",
+    "failed": "保存失败，请重试"
+  },
+  "common": { "cancel": "取消", "save": "保存", "delete": "删除", "edit": "编辑", "confirm": "确认", "back": "返回" }
+}

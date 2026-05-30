@@ -16,6 +16,7 @@ A personal web app for a single user (dad) to track daily income and expenses, v
 - **Devices:** mobile-first responsive web app (phone primary, laptop secondary).
 - **Auth:** Google sign-in (one tap).
 - **Currency:** MYR (configurable in settings, single currency only).
+- **Language:** Simplified Chinese (zh-CN) is the default. English (en) is available as a toggle in Settings. All UI copy is authored in Chinese first; English is the translated alternate.
 
 ## 3. Functional Requirements
 
@@ -71,10 +72,11 @@ These are explicit, measurable rules the app must meet — derived from the prim
 - Contrast meets **WCAG AA** in both light and dark mode.
 - The FAB is large (64 px) and thumb-reachable (bottom-right, 16 px margin).
 
-**Plain language**
-- No technical jargon ever surfaces in UI — no "sync", "OAuth", "RLS", "RLS policy", "transaction record". Use "saved", "signed in", "entry".
-- Screen titles: *Today*, *History*, *Reports*, *Budgets*, *Settings* (avoid "Transactions" as a primary label — "History" is more familiar).
-- Errors are written as instructions, not diagnostics. "Please enter an amount." not "Validation failed: amount is required."
+**Plain language (Chinese-first, English-alternate)**
+- All copy authored in Simplified Chinese first. English strings are translations of the Chinese source of truth, not the other way around.
+- No technical jargon in either language. Use 已保存 / "saved", 已登录 / "signed in", 记录 / "entry" — never 同步, OAuth, RLS, etc.
+- Screen titles (zh / en): *今天 / Today*, *记录 / History*, *报表 / Reports*, *预算 / Budgets*, *设置 / Settings*. Avoid 交易 / "Transactions" as a primary label.
+- Errors are written as instructions, not diagnostics: 请输入金额 / "Please enter an amount." — not 验证失败 / "Validation failed".
 
 **Forgiveness**
 - Every destructive action (delete a transaction, archive a category) has a **5-second undo toast**. No confirmation modals for routine actions.
@@ -116,9 +118,10 @@ These are explicit, measurable rules the app must meet — derived from the prim
 ### 4.1 Stack
 
 - **Frontend:** Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui components.
+- **Internationalization:** `next-intl` with two locales (`zh-CN` default, `en` alternate). Strings live in `messages/zh-CN.json` and `messages/en.json`. Locale persisted to `preferences.locale` (Supabase) and a cookie so it survives refreshes.
 - **Backend / DB / Auth:** Supabase (Postgres, Auth with Google OAuth, RLS).
 - **Charts:** Recharts.
-- **PDF:** jsPDF.
+- **PDF:** jsPDF (with a CJK-capable font embedded so Chinese exports render correctly).
 - **Hosting:** Vercel (frontend) + Supabase (backend), both on free tier.
 
 ### 4.2 Key architectural choices
@@ -136,7 +139,8 @@ All tables include `user_id uuid` and an RLS policy `user_id = auth.uid()`.
 -- 1. categories
 id            uuid pk
 user_id       uuid
-name          text
+name          text                  -- literal display name (used as-is for custom categories)
+i18n_key      text null             -- e.g. 'food', 'transport' — set for preset categories so the UI can localize the label; null for user-created
 kind          text                  -- 'income' | 'expense'
 icon          text                  -- emoji or lucide name
 color         text                  -- hex, for chart slices
@@ -182,6 +186,7 @@ is_active     bool default true
 -- 5. preferences  (one row per user)
 user_id       uuid pk
 currency      text default 'MYR'
+locale        text default 'zh-CN'   -- 'zh-CN' | 'en'
 default_view  text default 'today'
 created_at    timestamptz
 ```
@@ -191,7 +196,8 @@ created_at    timestamptz
 - `occurred_on` is `date` (not `timestamp`) — dad thinks in days, no timezone arithmetic.
 - `budgets.month` lets historical budgets stay intact when changed.
 - `recurring_rules.last_run_on` makes the scheduled function idempotent.
-- A Postgres trigger on `auth.users` insert seeds preset categories and the preferences row on first sign-in.
+- `categories.i18n_key` lets preset categories switch label when the user toggles locale; custom categories keep their literal `name`. Display logic: `i18n_key ? t(\`category.\${i18n_key}\`) : name`.
+- A Postgres trigger on `auth.users` insert seeds preset categories (with `i18n_key` populated) and the preferences row on first sign-in.
 
 ## 6. Visual Design Language
 
@@ -213,9 +219,10 @@ Accent colors are used only on amounts and the FAB. Everything else stays neutra
 
 ### 6.2 Typography
 
-- **Inter** for UI text.
-- **JetBrains Mono** for amounts (vertical alignment in lists).
-- Scale: Today-tile amounts 32px, body/list 16px, labels 13px muted.
+- Font stack: `Inter, "Noto Sans SC", system-ui, sans-serif`. Browsers select **Inter** for Latin/digits and **Noto Sans SC** for Chinese glyphs automatically — no per-locale switching needed.
+- **JetBrains Mono** for amounts (vertical alignment in lists). Amounts are digits + currency symbol only, so no CJK fallback required.
+- Both Inter and Noto Sans SC loaded via `next/font` (self-hosted, subset to used glyphs) for fast paint.
+- Scale: Today-tile amounts 32px, body/list 16px, labels 13px muted. Chinese characters render slightly larger visually than Latin at the same px — verify line-height (`leading-6` minimum for body) so descenders don't crowd.
 
 ### 6.3 Spacing & layout
 
@@ -259,10 +266,11 @@ One line of muted text + one button. Example: "Nothing yet today. **+ Add your f
 **Edge cases:**
 
 - **Timezones:** dates stored as `date`; display uses browser local timezone, no conversion.
-- **Currency formatting:** `Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR' })`, one helper used everywhere.
+- **Currency formatting:** `Intl.NumberFormat(locale, { style: 'currency', currency: 'MYR' })` where `locale` is the user's preference (`zh-CN` or `en`). One helper used everywhere; respects locale for grouping/decimal symbols and currency-symbol placement.
+- **Date formatting:** `Intl.DateTimeFormat(locale, …)`. Chinese renders dates as `2026年5月30日`; English as `May 30, 2026`. Day-of-week strings (`周一` / `Mon`) used in History grouping headers.
 - **Month boundaries:** "This month" = `[first_of_month, today]`. Budgets are per calendar month, not rolling 30 days.
 - **Recurring `day_of_month = 31`:** clamp to last day of shorter months (Feb → 28/29).
-- **First-run UX:** trigger seeds preset categories + preferences row on first sign-in. Dad lands on Today with categories ready, no setup required.
+- **First-run UX:** trigger seeds preset categories (with Chinese names — 餐饮、交通、账单、工资 etc., each with an `i18n_key` so English labels resolve from the message catalog) + preferences row (`locale='zh-CN'`) on first sign-in. Dad lands on Today with categories ready, no setup required.
 
 ## 8. Testing Strategy
 
@@ -272,7 +280,7 @@ One line of muted text + one button. Example: "Nothing yet today. **+ Add your f
 | Component | Vitest + Testing Library | Quick-add validation, transaction row interactions, filter behavior. |
 | Integration | Vitest + `supabase start` | RLS policies (user A cannot read user B), recurring materialization function, soft-delete behavior. |
 | E2E | Playwright (one happy path) | Sign in (mocked OAuth) → add expense → appears on Today → visible on Reports. Runs in CI on every PR. |
-| Manual pre-deploy checklist | — | Install on phone home screen; dark mode; slow-3G throttle; currency edge cases (`RM 0.50`, `RM 12,345.67`). |
+| Manual pre-deploy checklist | — | Install on phone home screen; dark mode; slow-3G throttle; currency edge cases (`RM 0.50`, `RM 12,345.67`); toggle locale zh-CN ↔ en (all screens render with no missing keys, no overflow on long Chinese strings). |
 
 ## 9. Hosting & Cost
 
